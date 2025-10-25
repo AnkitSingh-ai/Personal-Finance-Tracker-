@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?><sqlb_project><db path="finance_tracker.db" readonly="0" foreign_keys="1" case_sensitive_like="0" temp_store="0" wal_autocheckpoint="1000" synchronous="2"/><attached/><window><main_tabs open="structure browser pragmas query" current="3"/></window><tab_structure><column_width id="0" width="300"/><column_width id="1" width="0"/><column_width id="2" width="100"/><column_width id="3" width="1652"/><column_width id="4" width="0"/><expanded_item id="0" parent="1"/><expanded_item id="1" parent="1"/><expanded_item id="2" parent="1"/><expanded_item id="3" parent="1"/></tab_structure><tab_browse><table title="Users" custom_title="0" dock_id="1" table="4,5:mainUsers"/><dock_state state="000000ff00000000fd00000001000000020000000000000000fc0100000001fb000000160064006f0063006b00420072006f00770073006500310100000000ffffffff0000010100ffffff000000000000000000000004000000040000000800000008fc00000000"/><default_encoding codec=""/><browse_table_settings/></tab_browse><tab_sql><sql name="SQL 1*">CREATE TABLE Users (
+    user_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    email TEXT UNIQUE NOT NULL
+);
+
+CREATE TABLE Categories (
+    category_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    category_name TEXT NOT NULL,
+    type TEXT CHECK(type IN ('Income','Expense')) NOT NULL
+);
+
+CREATE TABLE Transactions (
+    txn_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    category_id INTEGER,
+    amount REAL NOT NULL,
+    txn_date DATE NOT NULL,
+    description TEXT,
+    FOREIGN KEY(user_id) REFERENCES Users(user_id),
+    FOREIGN KEY(category_id) REFERENCES Categories(category_id)
+);
+
+INSERT INTO Users (name, email) VALUES 
+('Ankit Singh', 'ankit@example.com');
+
+INSERT INTO Categories (category_name, type) VALUES
+('Salary', 'Income'),
+('Freelance', 'Income'),
+('Groceries', 'Expense'),
+('Rent', 'Expense'),
+('Entertainment', 'Expense');
+
+INSERT INTO Transactions (user_id, category_id, amount, txn_date, description) VALUES
+(1, 1, 50000, '2025-10-01', 'Monthly salary'),
+(1, 3, 5000, '2025-10-03', 'Supermarket groceries'),
+(1, 4, 12000, '2025-10-05', 'Apartment rent'),
+(1, 2, 8000, '2025-10-10', 'Freelance project'),
+(1, 5, 2000, '2025-10-15', 'Movies and dining');
+
+SELECT 
+    SUM(CASE WHEN C.type = 'Income' THEN T.amount ELSE 0 END) AS Total_Income,
+    SUM(CASE WHEN C.type = 'Expense' THEN T.amount ELSE 0 END) AS Total_Expense,
+    SUM(CASE WHEN C.type = 'Income' THEN T.amount ELSE 0 END) -
+    SUM(CASE WHEN C.type = 'Expense' THEN T.amount ELSE 0 END) AS Balance
+FROM Transactions T
+JOIN Categories C ON T.category_id = C.category_id
+WHERE T.user_id = 1;
+
+SELECT 
+    strftime('%Y-%m', txn_date) AS Month,
+    SUM(CASE WHEN C.type='Income' THEN amount ELSE 0 END) AS Income,
+    SUM(CASE WHEN C.type='Expense' THEN amount ELSE 0 END) AS Expense
+FROM Transactions T
+JOIN Categories C ON T.category_id = C.category_id
+WHERE user_id = 1
+GROUP BY Month
+ORDER BY Month;
+
+SELECT 
+    category_name,
+    SUM(amount) AS Total_Spent
+FROM Transactions T
+JOIN Categories C ON T.category_id = C.category_id
+WHERE C.type='Expense' AND user_id = 1
+GROUP BY category_name
+ORDER BY Total_Spent DESC;
+
+
+CREATE VIEW BalanceView AS
+SELECT 
+    U.name,
+    SUM(CASE WHEN C.type = 'Income' THEN T.amount ELSE 0 END) -
+    SUM(CASE WHEN C.type = 'Expense' THEN T.amount ELSE 0 END) AS Current_Balance
+FROM Users U
+JOIN Transactions T ON U.user_id = T.user_id
+JOIN Categories C ON T.category_id = C.category_id
+GROUP BY U.user_id;
+
+SELECT * FROM Users;
+SELECT * FROM Categories;
+SELECT * FROM Transactions;
+SELECT * FROM BalanceView;
+
+-- Overall summary
+SELECT 
+    SUM(CASE WHEN C.type='Income' THEN amount ELSE 0 END) AS Total_Income,
+    SUM(CASE WHEN C.type='Expense' THEN amount ELSE 0 END) AS Total_Expense,
+    SUM(CASE WHEN C.type='Income' THEN amount ELSE 0 END) -
+    SUM(CASE WHEN C.type='Expense' THEN amount ELSE 0 END) AS Balance
+FROM Transactions T
+JOIN Categories C ON T.category_id = C.category_id;</sql><current_tab id="0"/></tab_sql></sqlb_project>
